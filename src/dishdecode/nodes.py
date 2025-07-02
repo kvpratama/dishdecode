@@ -3,7 +3,7 @@ import os
 import logging
 import time
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage
-from dishdecode.state import GraphStateInput
+from dishdecode.state import RecommendedDishList, GraphState, KoreanDishes
 from PIL import Image
 from langchain_google_genai import ChatGoogleGenerativeAI
 # from prompts import load_prompt
@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 
-def preprocess_image(state: GraphStateInput, config: dict):
+def preprocess_image(state: GraphState, config: dict):
     logger.info(f"Resizing image: {state['image_path']}")
     image = Image.open(state["image_path"])
     original_width, original_height = image.size
@@ -42,17 +42,9 @@ def preprocess_image(state: GraphStateInput, config: dict):
     return {"image_path": os.path.splitext(state["image_path"])[0] + "_resized.jpg"}
 
 
-class KoreanDish(BaseModel):
-    """Simplified model using dictionary for all translations"""
-    dishes: List[str] = Field(
-        description="Korean dish names extracted from the image"
-    )
-
-
-def extract_menu(state: GraphStateInput, config: dict):
+def extract_menu(state: GraphState, config: dict):
     logger.info(f"Extract menu: {state['image_path']}")
-
-    parser = JsonOutputParser(pydantic_object=KoreanDish)
+    parser = JsonOutputParser(pydantic_object=KoreanDishes)
 
     # Initialize the Gemini model
     llm = ChatGoogleGenerativeAI(
@@ -70,7 +62,6 @@ def extract_menu(state: GraphStateInput, config: dict):
     human_message = HumanMessage(
         content=[
             {"type": "text", "text": plain_prompt + f"\n\n{parser.get_format_instructions()}"},
-            # {"type": "text", "text": plain_prompt},
             {"type": "image_url", "image_url": f"data:image/jpeg;base64,{encoded_image}"}
         ]
     )
@@ -79,3 +70,20 @@ def extract_menu(state: GraphStateInput, config: dict):
     parsed = parser.parse(response.content)
     logger.info(f"Menu: {parsed}")
     return {"menu_korean": list(parsed["dishes"])}
+
+
+def recommend_dishes(state: GraphState, config: dict):
+    logger.info(f"Recommend dishes:")
+    llm = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash-lite-preview-06-17",
+            temperature=0,
+            max_tokens=None,
+            timeout=60,  # Added a timeout
+            max_retries=2,
+        )
+    structured_llm = llm.with_structured_output(RecommendedDishList)
+    dishes_to_choose_from = "\n".join(state['menu_korean'])
+    response = structured_llm.invoke(f"You are given a list of Korean dish names. Return three recommended dishes for tourists. Here is the list:\n\n{dishes_to_choose_from}")
+    logger.info(f"Recommended dishes: {response}")
+    return {"recommended_dishes": response.recommended_dishes}
+

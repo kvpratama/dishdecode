@@ -1,15 +1,42 @@
 from typing import List
 from langgraph.graph import MessagesState
+from pydantic import BaseModel, Field
 # import operator
+
+
+class KoreanDishes(BaseModel):
+    """ Korean dish names extracted from the image """
+    dishes: List[str] = Field(
+        description="Korean dish names extracted from the image"
+    )
+
+class RecommendedDish(BaseModel):
+    """Simplified model using dictionary for all translations"""
+    korean_name: str = Field(
+        description="Dish name in Korean"
+    )
+    english_name: str = Field(
+        description="Literal English translation of the dish name"
+    )
+    description: str = Field(
+        description="Description of the dish in English"
+    )
+    why: str = Field(
+        description="Why this dish is recommended for tourists"
+    )
+
+class RecommendedDishList(BaseModel):
+    recommended_dishes: List[RecommendedDish] = Field(
+        description="List of recommended dishes"
+    )
+
 
 # Define the state type with annotations
 class GraphState(MessagesState):
     image_path: str
     max_size: int
     menu_korean: List[str]
-    menu_english: List[str]
-    menu_description: List[str]
-    menu_images: List[str]
+    recommended_dishes: List[RecommendedDish]
 
 class GraphStateInput(MessagesState):
     image_path: str
@@ -17,6 +44,5 @@ class GraphStateInput(MessagesState):
 
 class GraphStateOutput(MessagesState):
     menu_korean: List[str]
-    menu_english: List[str]
-    menu_description: List[str]
-    menu_images: List[str]
+    recommended_dishes: List[RecommendedDish]
+
