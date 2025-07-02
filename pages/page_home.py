@@ -40,8 +40,8 @@ if "thread_id_dishdecode" not in st.session_state:
                 # thread_id=st.session_state['thread_id_dishdecode']
             )
             for dish in result["recommended_dishes"]:
-                st.write(dish.korean_name)
-                st.write(dish.english_name)
+                st.write("---")
+                st.write(f"{dish.korean_name} / {dish.english_name}")
                 st.write(dish.description)
                 st.write(dish.why)
-                st.write("---")
+                st.image(result["image_urls"][dish.korean_name][0])
