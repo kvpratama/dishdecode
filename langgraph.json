@@ -1,0 +1,11 @@
+{
+    "dockerfile_lines": [],
+    "graphs": {
+      "main_graph": "./src/dishdecode/graph.py:graph"
+    },
+    "env": "./.env",
+    "python_version": "3.13",
+    "dependencies": [
+      "."
+    ]
+  }
