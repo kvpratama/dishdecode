@@ -11,7 +11,7 @@ import base64
 import json
 # from llm_model import get_gemma27b_llm, get_gemma12b_llm
 from langgraph.config import get_stream_writer
-from typing import Dict
+from typing import Dict, List
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
@@ -42,17 +42,17 @@ def preprocess_image(state: GraphStateInput, config: dict):
     return {"image_path": os.path.splitext(state["image_path"])[0] + "_resized.jpg"}
 
 
-class DishTranslations(BaseModel):
+class KoreanDish(BaseModel):
     """Simplified model using dictionary for all translations"""
-    translations: Dict[str, str] = Field(
-        description="Korean dish names mapped to English translations"
+    dishes: List[str] = Field(
+        description="Korean dish names extracted from the image"
     )
 
 
 def extract_menu(state: GraphStateInput, config: dict):
     logger.info(f"Extract menu: {state['image_path']}")
 
-    parser = JsonOutputParser(pydantic_object=DishTranslations)
+    parser = JsonOutputParser(pydantic_object=KoreanDish)
 
     # Initialize the Gemini model
     llm = ChatGoogleGenerativeAI(
@@ -66,7 +66,7 @@ def extract_menu(state: GraphStateInput, config: dict):
     with open(state["image_path"], "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
-    plain_prompt = "Extract korean food name from this image. Return a dictionary that maps Korean dish names to English translations."
+    plain_prompt = "Extract korean dish name from this image. Return a list of Korean dish names."
     human_message = HumanMessage(
         content=[
             {"type": "text", "text": plain_prompt + f"\n\n{parser.get_format_instructions()}"},
@@ -78,4 +78,4 @@ def extract_menu(state: GraphStateInput, config: dict):
     response = llm.invoke([human_message])
     parsed = parser.parse(response.content)
     logger.info(f"Menu: {parsed}")
-    return {"menu_korean": list(parsed["translations"].keys()), "menu_english": list(parsed["translations"].values())}
+    return {"menu_korean": list(parsed["dishes"])}
