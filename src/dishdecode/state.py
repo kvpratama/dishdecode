@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from langgraph.graph import MessagesState
 from pydantic import BaseModel, Field
 # import operator
@@ -33,6 +33,7 @@ class GraphState(MessagesState):
     max_size: int
     menu_korean: List[str]
     recommended_dishes: List[RecommendedDish]
+    image_urls: Dict[str, list[str]]
 
 
 class GraphStateInput(MessagesState):
@@ -43,3 +44,4 @@ class GraphStateInput(MessagesState):
 class GraphStateOutput(MessagesState):
     menu_korean: List[str]
     recommended_dishes: List[RecommendedDish]
+    image_urls: Dict[str, list[str]]
