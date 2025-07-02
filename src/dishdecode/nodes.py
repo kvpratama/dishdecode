@@ -110,3 +110,10 @@ def search_dish_image(state: GraphState, config: dict):
         topic="general",
         include_images=True,
     )
+
+    image_urls = {}
+    for dish in state["recommended_dishes"]:
+        # Search for dish image using Korean name
+        result = tool.invoke(dish.korean_name)
+        image_urls[dish.korean_name] = result["images"]
+    return {"image_urls": image_urls}
