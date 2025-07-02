@@ -1,0 +1,28 @@
+[project]
+name = "dishdecode"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "langchain>=0.3.26",
+    "langchain-google-genai>=2.1.6",
+    "langgraph>=0.5.0",
+    "pillow>=11.3.0",
+]
+
+[build-system]
+requires = ["setuptools>=73.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["dishdecode"]
+
+[tool.setuptools.package-dir]
+"dishdecode" = "src/dishdecode"
+
+[dependency-groups]
+dev = [
+    "langgraph-api>=0.2.77",
+    "langgraph-cli>=0.3.3",
+]
