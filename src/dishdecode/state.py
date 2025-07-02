@@ -5,25 +5,21 @@ from pydantic import BaseModel, Field
 
 
 class KoreanDishes(BaseModel):
-    """ Korean dish names extracted from the image """
-    dishes: List[str] = Field(
-        description="Korean dish names extracted from the image"
-    )
+    """Korean dish names extracted from the image"""
+
+    dishes: List[str] = Field(description="Korean dish names extracted from the image")
+
 
 class RecommendedDish(BaseModel):
     """Simplified model using dictionary for all translations"""
-    korean_name: str = Field(
-        description="Dish name in Korean"
-    )
+
+    korean_name: str = Field(description="Dish name in Korean")
     english_name: str = Field(
         description="Literal English translation of the dish name"
     )
-    description: str = Field(
-        description="Description of the dish in English"
-    )
-    why: str = Field(
-        description="Why this dish is recommended for tourists"
-    )
+    description: str = Field(description="Description of the dish in English")
+    why: str = Field(description="Why this dish is recommended for tourists")
+
 
 class RecommendedDishList(BaseModel):
     recommended_dishes: List[RecommendedDish] = Field(
@@ -38,11 +34,12 @@ class GraphState(MessagesState):
     menu_korean: List[str]
     recommended_dishes: List[RecommendedDish]
 
+
 class GraphStateInput(MessagesState):
     image_path: str
     max_size: int
 
+
 class GraphStateOutput(MessagesState):
     menu_korean: List[str]
     recommended_dishes: List[RecommendedDish]
-
