@@ -40,13 +40,14 @@ if "thread_id_dishdecode" not in st.session_state:
                 # thread_id=st.session_state['thread_id_dishdecode']
             )
             for dish in result["recommended_dishes"]:
-                st.write("---")
-                st.write(f"{dish.korean_name} / {dish.english_name}")
-                st.write(dish.description)
-                st.write(dish.why)
-                # Display multiple images in one row
-                image_urls = result["image_urls"][dish.korean_name]
-                cols = st.columns(len(image_urls))
-                for idx, image_url in enumerate(image_urls):
-                    with cols[idx]:
-                        st.image(image_url)
+                with st.expander(f"{dish.korean_name} / {dish.english_name}"):
+                    st.write(dish.description)
+                    st.write(dish.why)
+                    # Display multiple images in one row
+                    image_urls = result["image_urls"][dish.korean_name]
+                    if image_urls:
+                        n_cols = min(len(image_urls), 3)
+                        cols = st.columns(n_cols)
+                        for idx, image_url in enumerate(image_urls[:n_cols]):
+                            with cols[idx]:
+                                st.image(image_url)
