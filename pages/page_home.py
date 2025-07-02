@@ -44,4 +44,9 @@ if "thread_id_dishdecode" not in st.session_state:
                 st.write(f"{dish.korean_name} / {dish.english_name}")
                 st.write(dish.description)
                 st.write(dish.why)
-                st.image(result["image_urls"][dish.korean_name][0])
+                # Display multiple images in one row
+                image_urls = result["image_urls"][dish.korean_name]
+                cols = st.columns(len(image_urls))
+                for idx, image_url in enumerate(image_urls):
+                    with cols[idx]:
+                        st.image(image_url)
