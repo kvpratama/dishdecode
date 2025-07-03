@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 def preprocess_image(state: GraphState, config: dict):
     logger.info(f"Resizing image: {state['image_path']}")
+    stream_writer = get_stream_writer()
+    stream_writer({"custom_key": "Processing the menu..."})
+
     image = Image.open(state["image_path"])
     original_width, original_height = image.size
 
@@ -47,6 +50,8 @@ def preprocess_image(state: GraphState, config: dict):
 
 def extract_menu(state: GraphState, config: dict):
     logger.info(f"Extract menu: {state['image_path']}")
+    stream_writer = get_stream_writer()
+    stream_writer({"custom_key": "Decoding dish name..."})
     parser = JsonOutputParser(pydantic_object=KoreanDishes)
 
     # Initialize the Gemini model
@@ -80,11 +85,14 @@ def extract_menu(state: GraphState, config: dict):
     response = llm.invoke([human_message])
     parsed = parser.parse(response.content)
     logger.info(f"Menu: {parsed}")
+    stream_writer({"custom_key": f"Menu extracted {parsed['dishes']}..."})
     return {"menu_korean": list(parsed["dishes"])}
 
 
 def recommend_dishes(state: GraphState, config: dict):
     logger.info(f"Recommend dishes:")
+    stream_writer = get_stream_writer()
+    stream_writer({"custom_key": "Picking top dishes..."})
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite-preview-06-17",
         temperature=0,
@@ -102,7 +110,9 @@ def recommend_dishes(state: GraphState, config: dict):
 
 
 def search_dish_image(state: GraphState, config: dict):
-    logger.info(f"Search dish image:")
+    logger.info(f"Searching dish image:")
+    stream_writer = get_stream_writer()
+    stream_writer({"custom_key": "Retrieving dish images to enhance visual context..."})
     tool = TavilySearch(
         max_results=1,
         topic="general",

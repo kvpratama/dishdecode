@@ -32,13 +32,27 @@ if "thread_id_dishdecode" not in st.session_state:
                 logger.info(f"Saving temporary file: {tmp.name}")
                 tmp.write(uploaded_file.read())
                 paths.append(tmp.name)
-            result = graph.invoke(
-                {
-                    "image_path": paths[0],
-                    "max_size": 640,
-                },
-                # thread_id=st.session_state['thread_id_dishdecode']
-            )
+
+            input_data = {
+                "image_path": paths[0],
+                "max_size": 640,
+            }
+            with st.empty():
+                for stream_mode, chunk in graph.stream(
+                    input_data,
+                    config={
+                        "configurable": {
+                            "thread_id": st.session_state["thread_id_dishdecode"]
+                        }
+                    },
+                    stream_mode=["values", "custom"],
+                ):
+                    if stream_mode == "custom":
+                        st.write(chunk.get("custom_key", ""))
+                    elif stream_mode == "values":
+                        result = chunk
+                        st.write("")
+
             for dish in result["recommended_dishes"]:
                 with st.expander(f"{dish.korean_name} / {dish.english_name}"):
                     st.write(dish.description)
