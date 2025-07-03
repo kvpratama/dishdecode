@@ -51,3 +51,11 @@ if "thread_id_dishdecode" not in st.session_state:
                         for idx, image_url in enumerate(image_urls[:n_cols]):
                             with cols[idx]:
                                 st.image(image_url)
+
+            for path in paths:
+                try:
+                    logger.info(f"Removing temporary file: {path}")
+                    os.remove(path)
+                except Exception as e:
+                    logger.error(f"Failed to remove temporary file: {path}")
+                    logger.error(str(e))

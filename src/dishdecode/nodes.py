@@ -40,11 +40,9 @@ def preprocess_image(state: GraphState, config: dict):
     resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
     # # save resized image using original filename
-    resized_image.save(os.path.splitext(state["image_path"])[0] + "_resized.jpg")
-    logger.info(
-        f"Resized image: {os.path.splitext(state['image_path'])[0] + '_resized.jpg'}"
-    )
-    return {"image_path": os.path.splitext(state["image_path"])[0] + "_resized.jpg"}
+    resized_image.save(state["image_path"])
+    logger.info(f"Resized image: {state['image_path']}")
+    return {"image_path": state["image_path"]}
 
 
 def extract_menu(state: GraphState, config: dict):
