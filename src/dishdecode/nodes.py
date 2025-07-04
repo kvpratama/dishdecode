@@ -5,7 +5,7 @@ import time
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage
 from dishdecode.state import RecommendedDishList, GraphState, KoreanDishes
 from PIL import Image
-from langchain_google_genai import ChatGoogleGenerativeAI
+from dishdecode.llm import get_llm
 
 # from prompts import load_prompt
 import base64
@@ -52,16 +52,11 @@ def extract_menu(state: GraphState, config: dict):
     logger.info(f"Extract menu: {state['image_path']}")
     stream_writer = get_stream_writer()
     stream_writer({"custom_key": "Decoding dish name..."})
+
     parser = JsonOutputParser(pydantic_object=KoreanDishes)
 
     # Initialize the Gemini model
-    llm = ChatGoogleGenerativeAI(
-        model="gemma-3-12b-it",
-        temperature=0,
-        max_tokens=None,
-        timeout=60,  # Added a timeout
-        max_retries=2,
-    )
+    llm = get_llm(model_name="gemma-3-12b-it")
     # Load and encode local image
     with open(state["image_path"], "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
@@ -84,6 +79,7 @@ def extract_menu(state: GraphState, config: dict):
 
     response = llm.invoke([human_message])
     parsed = parser.parse(response.content)
+
     logger.info(f"Menu: {parsed}")
     stream_writer({"custom_key": f"Menu extracted {parsed['dishes']}..."})
     return {"menu_korean": list(parsed["dishes"])}
@@ -93,18 +89,15 @@ def recommend_dishes(state: GraphState, config: dict):
     logger.info(f"Recommend dishes:")
     stream_writer = get_stream_writer()
     stream_writer({"custom_key": "Picking top dishes..."})
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-lite-preview-06-17",
-        temperature=0,
-        max_tokens=None,
-        timeout=60,  # Added a timeout
-        max_retries=2,
-    )
+
+    llm = get_llm(model_name="gemini-2.5-flash-lite-preview-06-17")
     structured_llm = llm.with_structured_output(RecommendedDishList)
+
     dishes_to_choose_from = "\n".join(state["menu_korean"])
     response = structured_llm.invoke(
         f"You are given a list of Korean dish names. Return three recommended dishes for tourists. Here is the list:\n\n{dishes_to_choose_from}"
     )
+
     logger.info(f"Recommended dishes: {response}")
     return {"recommended_dishes": response.recommended_dishes}
 
@@ -113,6 +106,7 @@ def search_dish_image(state: GraphState, config: dict):
     logger.info(f"Searching dish image:")
     stream_writer = get_stream_writer()
     stream_writer({"custom_key": "Retrieving dish images to enhance visual context..."})
+
     tool = TavilySearch(
         max_results=1,
         topic="general",

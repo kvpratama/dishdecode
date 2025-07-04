@@ -22,7 +22,7 @@ if "thread_id_dishdecode" not in st.session_state:
     )
 
     if uploaded_file:
-        st.image(uploaded_file)
+        st.image(uploaded_file, width=400)
         st.session_state["thread_id_dishdecode"] = str(uuid.uuid4())
         with st.spinner("Processing..."):
             paths = []
