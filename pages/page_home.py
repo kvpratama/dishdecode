@@ -28,26 +28,48 @@ Snap a photo of any menu—anywhere in the world—and let our powerful app do t
 3. View the extracted dish names, recommendations, and images.
 
 No more guessing games. No more menu anxiety. Just smarter, tastier decisions—served up in seconds!
+
+---
+
 """)
+
 if "thread_id_dishdecode" not in st.session_state:
+    enable = st.checkbox("Enable camera")
+    camera_image = st.camera_input("Take a picture", disabled=not enable)
     uploaded_file = st.file_uploader(
-        "Choose images", type=["png", "jpg", "jpeg"], accept_multiple_files=False
+        "Or choose images", type=["png", "jpg", "jpeg"], accept_multiple_files=False
     )
 
-    if uploaded_file:
-        st.image(uploaded_file, width=400)
+    file_to_process = camera_image if camera_image else uploaded_file
+
+    if file_to_process:
+        
         st.session_state["thread_id_dishdecode"] = str(uuid.uuid4())
         with st.spinner("Processing..."):
             paths = []
+            # Use the appropriate method to get bytes and extension
+            if uploaded_file:
+                file_bytes = uploaded_file.read()
+                file_suffix = os.path.splitext(uploaded_file.name)[1]
+            else:
+                file_bytes = camera_image.getvalue()
+                file_suffix = ".jpg"  # camera_input returns jpg
             with tempfile.NamedTemporaryFile(
-                delete=False, suffix=os.path.splitext(uploaded_file.name)[1]
+                delete=False, suffix=file_suffix
             ) as tmp:
                 logger.info(f"Saving temporary file: {tmp.name}")
-                tmp.write(uploaded_file.read())
+                tmp.write(file_bytes)
                 paths.append(tmp.name)
+            st.session_state["paths"] = paths
+            st.rerun()
 
+if "paths" in st.session_state and "result" not in st.session_state:
+    st.image(st.session_state["paths"][0], width=400)
+
+    if st.button("Process image"):
+        with st.spinner("Processing..."):
             input_data = {
-                "image_path": paths[0],
+                "image_path": st.session_state["paths"][0],
                 "max_size": 640,
             }
             with st.empty():
@@ -65,27 +87,32 @@ if "thread_id_dishdecode" not in st.session_state:
                     elif stream_mode == "values":
                         result = chunk
                         st.write("")
+                st.session_state["result"] = result
+        st.rerun()
+    
+if "result" in st.session_state:
+    st.image(st.session_state["paths"][0], width=400)
+    
+    if not st.session_state["result"]["is_menu"]:
+        st.write("The image is not a restaurant menu written in Korean")
+    else:
+        for dish in st.session_state["result"]["recommended_dishes"]:
+            with st.expander(f"{dish.korean_name} / {dish.english_name}"):
+                st.write(dish.description)
+                st.write(dish.why)
+                # Display multiple images in one row
+                image_urls = st.session_state["result"]["dish_images"][dish.korean_name]
+                if image_urls:
+                    n_cols = min(len(image_urls), 3)
+                    cols = st.columns(n_cols)
+                    for idx, image_url in enumerate(image_urls[:n_cols]):
+                        with cols[idx]:
+                            st.image(image_url)
 
-            if not result["is_menu"]:
-                st.write("The image is not a restaurant menu written in Korean")
-            else:
-                for dish in result["recommended_dishes"]:
-                    with st.expander(f"{dish.korean_name} / {dish.english_name}"):
-                        st.write(dish.description)
-                        st.write(dish.why)
-                        # Display multiple images in one row
-                        image_urls = result["image_urls"][dish.korean_name]
-                        if image_urls:
-                            n_cols = min(len(image_urls), 3)
-                            cols = st.columns(n_cols)
-                            for idx, image_url in enumerate(image_urls[:n_cols]):
-                                with cols[idx]:
-                                    st.image(image_url)
-
-            for path in paths:
-                try:
-                    logger.info(f"Removing temporary file: {path}")
-                    os.remove(path)
-                except Exception as e:
-                    logger.error(f"Failed to remove temporary file: {path}")
-                    logger.error(str(e))
+    for path in st.session_state["paths"]:
+        try:
+            logger.info(f"Removing temporary file: {path}")
+            os.remove(path)
+        except Exception as e:
+            logger.error(f"Failed to remove temporary file: {path}")
+            logger.error(str(e))
