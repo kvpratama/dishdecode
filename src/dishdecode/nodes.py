@@ -3,7 +3,7 @@ import os
 import logging
 import time
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage
-from dishdecode.state import RecommendedDishList, GraphState, KoreanDishes
+from dishdecode.state import RecommendedDishList, GraphState, KoreanDishes, CheckImage
 from PIL import Image
 from dishdecode.llm import get_llm
 
@@ -13,9 +13,10 @@ import json
 
 # from llm_model import get_gemma27b_llm, get_gemma12b_llm
 from langgraph.config import get_stream_writer
-from typing import Dict, List
+from typing import Dict, List, Literal
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langgraph.types import Command
 from pydantic import BaseModel, Field
 from langchain_tavily import TavilySearch
 
@@ -48,27 +49,28 @@ def preprocess_image(state: GraphState, config: dict):
     return {"image_path": state["image_path"]}
 
 
-def extract_menu(state: GraphState, config: dict):
-    logger.info(f"Extract menu: {state['image_path']}")
+def process_image_with_llm(
+    *,
+    state: GraphState,
+    log_message: str,
+    stream_message: str,
+    parser: JsonOutputParser,
+    prompt: str,
+    model_name: str,
+    postprocess_fn=None
+):
+    logger.info(f"{log_message}: {state['image_path']}")
     stream_writer = get_stream_writer()
-    stream_writer({"custom_key": "Decoding dish name..."})
+    stream_writer({"custom_key": stream_message})
 
-    parser = JsonOutputParser(pydantic_object=KoreanDishes)
-
-    # Initialize the Gemini model
-    llm = get_llm(model_name="gemma-3-12b-it")
-    # Load and encode local image
+    llm = get_llm(model_name=model_name)
     with open(state["image_path"], "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
-
-    plain_prompt = (
-        "Extract korean dish name from this image. Return a list of Korean dish names."
-    )
     human_message = HumanMessage(
         content=[
             {
                 "type": "text",
-                "text": plain_prompt + f"\n\n{parser.get_format_instructions()}",
+                "text": prompt + f"\n\n{parser.get_format_instructions()}",
             },
             {
                 "type": "image_url",
@@ -76,13 +78,49 @@ def extract_menu(state: GraphState, config: dict):
             },
         ]
     )
-
     response = llm.invoke([human_message])
     parsed = parser.parse(response.content)
+    if postprocess_fn:
+        return postprocess_fn(parsed, stream_writer)
+    return parsed
 
-    logger.info(f"Menu: {parsed}")
-    stream_writer({"custom_key": f"Menu extracted {parsed['dishes']}..."})
-    return {"menu_korean": list(parsed["dishes"])}
+def check_menu(state: GraphState, config: dict) -> Command[Literal["extract_menu", "__end__"]]:
+    def postprocess(parsed, stream_writer):
+        is_menu = parsed["is_menu"]
+        update = {"is_menu": is_menu}
+        if is_menu:
+            logger.info("Image is a restaurant menu written in Korean")
+            goto = "extract_menu"
+        else:
+            logger.info("Image is not a restaurant menu written in Korean")
+            goto = "__end__"
+        return Command(update=update, goto=goto)
+    return process_image_with_llm(
+        state=state,
+        log_message="Checking menu",
+        stream_message="Checking image...",
+        parser=JsonOutputParser(pydantic_object=CheckImage),
+        prompt="Classify the image as a restaurant menu written in Korean. Return True if it is a restaurant menu written in Korean, False otherwise.",
+        model_name="gemma-3-12b-it",
+        postprocess_fn=postprocess
+    )
+
+
+def extract_menu(state: GraphState, config: dict):
+    def postprocess(parsed, stream_writer):
+        logger.info(f"Menu: {parsed}")
+        stream_writer({"custom_key": f"Menu extracted {parsed['dishes']}..."})
+        return {"menu_korean": list(parsed["dishes"])}
+    return process_image_with_llm(
+        state=state,
+        log_message="Extract menu",
+        stream_message="Decoding dish name...",
+        parser=JsonOutputParser(pydantic_object=KoreanDishes),
+        prompt="Extract korean dish name from this image. Return a list of Korean dish names.",
+        model_name="gemma-3-12b-it",
+        postprocess_fn=postprocess
+    )
+
 
 
 def recommend_dishes(state: GraphState, config: dict):
