@@ -240,7 +240,8 @@ def search_dish_image(state: GraphState, config: dict):
                     image_urls[dish.korean_name] = None
             except Exception as e:
                 logger.error(
-                    f"Exception searching image for dish '{dish.korean_name}': {e}", exc_info=True
+                    f"Exception searching image for dish '{dish.korean_name}': {e}",
+                    exc_info=True,
                 )
                 image_urls[dish.korean_name] = None
         logger.info("Finished searching dish images")

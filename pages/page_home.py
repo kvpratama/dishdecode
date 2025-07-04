@@ -48,7 +48,6 @@ if "thread_id_dishdecode" not in st.session_state:
     file_to_process = camera_image if camera_image else uploaded_file
 
     if file_to_process:
-        
         st.session_state["thread_id_dishdecode"] = str(uuid.uuid4())
         with st.spinner("Processing..."):
             paths = []
@@ -59,9 +58,7 @@ if "thread_id_dishdecode" not in st.session_state:
             else:
                 file_bytes = camera_image.getvalue()
                 file_suffix = ".jpg"  # camera_input returns jpg
-            with tempfile.NamedTemporaryFile(
-                delete=False, suffix=file_suffix
-            ) as tmp:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix) as tmp:
                 logger.info(f"Saving temporary file: {tmp.name}")
                 tmp.write(file_bytes)
                 paths.append(tmp.name)
@@ -94,12 +91,12 @@ if "paths" in st.session_state and "result" not in st.session_state:
                         st.write("")
                 st.session_state["result"] = result
         st.rerun()
-    
+
 if "result" in st.session_state:
     st.image(st.session_state["paths"][0], width=400)
 
     if not st.session_state["result"]["is_menu"]:
-        st.write("The image is not a restaurant menu written in Korean")
+        st.write("The image is not a menu written in Korean")
     else:
         for dish in st.session_state["result"]["recommended_dishes"]:
             with st.expander(f"{dish.korean_name} / {dish.english_name}"):
