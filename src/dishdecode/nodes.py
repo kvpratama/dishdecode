@@ -233,16 +233,17 @@ def search_dish_image(state: GraphState, config: dict):
         for dish in state["recommended_dishes"]:
             # Search for dish image using Korean name
             try:
-                results = tool.search(dish)
+                results = tool.invoke(dish.korean_name)
                 if results and "images" in results and results["images"]:
-                    image_urls[dish] = results["images"][0]
+                    image_urls[dish.korean_name] = results["images"]
                 else:
-                    image_urls[dish] = None
+                    image_urls[dish.korean_name] = None
             except Exception as e:
                 logger.error(
-                    f"Exception searching image for dish '{dish}': {e}", exc_info=True
+                    f"Exception searching image for dish '{dish.korean_name}': {e}", exc_info=True
                 )
-                image_urls[dish] = None
+                image_urls[dish.korean_name] = None
+        logger.info("Finished searching dish images")
         return {"dish_images": image_urls}
     except Exception as e:
         logger.error(f"Exception in search_dish_image: {e}", exc_info=True)
