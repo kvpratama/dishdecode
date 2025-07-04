@@ -20,25 +20,30 @@ st.markdown("""
 
 Snap a photo of any menu—anywhere in the world—and let our powerful app do the rest. DishDecode instantly decodes menu items, recommends top-rated dishes, and even shows you mouthwatering images so you know exactly what to expect.
 
-:information_source: **Note:** Currently, DishDecode supports only menus written in Korean.
+**How it works:**
+- 📸 Snap or upload a photo of any menu.
+- ⏳ Sit tight—we’ll decode it in seconds.
+- 🍽️ Instantly see English dish names, top picks, and mouthwatering images
 
-**How to use:**
-1. Upload a clear photo of a Korean menu using the uploader below.
-2. Wait a moment while we process and decode the menu.
-3. View the extracted dish names, recommendations, and images.
 
-No more guessing games. No more menu anxiety. Just smarter, tastier decisions—served up in seconds!
+No more guessing games. No more menu anxiety. Just smarter, tastier decisions!
+
+:information_source: **Notes:** DishDecode currently works with Korean-language menus only.
 
 ---
 
 """)
 
 if "thread_id_dishdecode" not in st.session_state:
+    # Turn this into two columns
+    cols = st.columns(2)
     enable = st.checkbox("Enable camera")
-    camera_image = st.camera_input("Take a picture", disabled=not enable)
-    uploaded_file = st.file_uploader(
-        "Or choose images", type=["png", "jpg", "jpeg"], accept_multiple_files=False
-    )
+    with cols[0]:
+        camera_image = st.camera_input("Take a picture", disabled=not enable)
+    with cols[1]:
+        uploaded_file = st.file_uploader(
+            "Or choose images", type=["png", "jpg", "jpeg"], accept_multiple_files=False
+        )
 
     file_to_process = camera_image if camera_image else uploaded_file
 
@@ -92,7 +97,7 @@ if "paths" in st.session_state and "result" not in st.session_state:
     
 if "result" in st.session_state:
     st.image(st.session_state["paths"][0], width=400)
-    
+
     if not st.session_state["result"]["is_menu"]:
         st.write("The image is not a restaurant menu written in Korean")
     else:
