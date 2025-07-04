@@ -11,10 +11,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-st.title("Dish Decode")
+st.title("DishDecode")
 
 st.markdown("""
-This app helps you to decode Korean dish names.
+🤔 Menu read like a secret code?
+
+🍽️ Ready to crack it and order like a local?
+
+Snap a photo of any menu—anywhere in the world—and let our powerful app do the rest. DishDecode instantly decodes menu items, recommends top-rated dishes, and even shows you mouthwatering images so you know exactly what to expect.
+
+:information_source: **Note:** Currently, DishDecode supports only menus written in Korean.
+
+**How to use:**
+1. Upload a clear photo of a Korean menu using the uploader below.
+2. Wait a moment while we process and decode the menu.
+3. View the extracted dish names, recommendations, and images.
+
+No more guessing games. No more menu anxiety. Just smarter, tastier decisions—served up in seconds!
 """)
 if "thread_id_dishdecode" not in st.session_state:
     uploaded_file = st.file_uploader(
