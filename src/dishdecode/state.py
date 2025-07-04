@@ -39,7 +39,7 @@ class GraphState(MessagesState):
     max_size: int
     menu_korean: List[str]
     recommended_dishes: List[RecommendedDish]
-    image_urls: Dict[str, list[str]]
+    dish_images: Dict[str, list[str]]
     is_menu: bool
 
 
@@ -51,5 +51,5 @@ class GraphStateInput(MessagesState):
 class GraphStateOutput(MessagesState):
     menu_korean: List[str]
     recommended_dishes: List[RecommendedDish]
-    image_urls: Dict[str, list[str]]
+    dish_images: Dict[str, list[str]]
     is_menu: bool
