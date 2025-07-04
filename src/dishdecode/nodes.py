@@ -57,7 +57,7 @@ def process_image_with_llm(
     parser: JsonOutputParser,
     prompt: str,
     model_name: str,
-    postprocess_fn=None
+    postprocess_fn=None,
 ):
     logger.info(f"{log_message}: {state['image_path']}")
     stream_writer = get_stream_writer()
@@ -84,7 +84,10 @@ def process_image_with_llm(
         return postprocess_fn(parsed, stream_writer)
     return parsed
 
-def check_menu(state: GraphState, config: dict) -> Command[Literal["extract_menu", "__end__"]]:
+
+def check_menu(
+    state: GraphState, config: dict
+) -> Command[Literal["extract_menu", "__end__"]]:
     def postprocess(parsed, stream_writer):
         is_menu = parsed["is_menu"]
         update = {"is_menu": is_menu}
@@ -95,6 +98,7 @@ def check_menu(state: GraphState, config: dict) -> Command[Literal["extract_menu
             logger.info("Image is not a restaurant menu written in Korean")
             goto = "__end__"
         return Command(update=update, goto=goto)
+
     return process_image_with_llm(
         state=state,
         log_message="Checking menu",
@@ -102,7 +106,7 @@ def check_menu(state: GraphState, config: dict) -> Command[Literal["extract_menu
         parser=JsonOutputParser(pydantic_object=CheckImage),
         prompt="Classify the image as a restaurant menu written in Korean. Return True if it is a restaurant menu written in Korean, False otherwise.",
         model_name="gemma-3-12b-it",
-        postprocess_fn=postprocess
+        postprocess_fn=postprocess,
     )
 
 
@@ -111,6 +115,7 @@ def extract_menu(state: GraphState, config: dict):
         logger.info(f"Menu: {parsed}")
         stream_writer({"custom_key": f"Menu extracted {parsed['dishes']}..."})
         return {"menu_korean": list(parsed["dishes"])}
+
     return process_image_with_llm(
         state=state,
         log_message="Extract menu",
@@ -118,9 +123,8 @@ def extract_menu(state: GraphState, config: dict):
         parser=JsonOutputParser(pydantic_object=KoreanDishes),
         prompt="Extract korean dish name from this image. Return a list of Korean dish names.",
         model_name="gemma-3-12b-it",
-        postprocess_fn=postprocess
+        postprocess_fn=postprocess,
     )
-
 
 
 def recommend_dishes(state: GraphState, config: dict):

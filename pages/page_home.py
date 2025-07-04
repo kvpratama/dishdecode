@@ -52,7 +52,7 @@ if "thread_id_dishdecode" not in st.session_state:
                     elif stream_mode == "values":
                         result = chunk
                         st.write("")
-            
+
             if not result["is_menu"]:
                 st.write("The image is not a restaurant menu written in Korean")
             else:
