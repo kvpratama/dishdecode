@@ -4,6 +4,12 @@ from pydantic import BaseModel, Field
 # import operator
 
 
+class CheckImage(BaseModel):
+    """Check if the image is Restaurant Menu written in Korean"""
+
+    is_menu: bool = Field(description="Is the image a restaurant menu?")
+
+
 class KoreanDishes(BaseModel):
     """Korean dish names extracted from the image"""
 
@@ -34,6 +40,7 @@ class GraphState(MessagesState):
     menu_korean: List[str]
     recommended_dishes: List[RecommendedDish]
     image_urls: Dict[str, list[str]]
+    is_menu: bool
 
 
 class GraphStateInput(MessagesState):
@@ -45,3 +52,4 @@ class GraphStateOutput(MessagesState):
     menu_korean: List[str]
     recommended_dishes: List[RecommendedDish]
     image_urls: Dict[str, list[str]]
+    is_menu: bool

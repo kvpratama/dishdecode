@@ -52,19 +52,22 @@ if "thread_id_dishdecode" not in st.session_state:
                     elif stream_mode == "values":
                         result = chunk
                         st.write("")
-
-            for dish in result["recommended_dishes"]:
-                with st.expander(f"{dish.korean_name} / {dish.english_name}"):
-                    st.write(dish.description)
-                    st.write(dish.why)
-                    # Display multiple images in one row
-                    image_urls = result["image_urls"][dish.korean_name]
-                    if image_urls:
-                        n_cols = min(len(image_urls), 3)
-                        cols = st.columns(n_cols)
-                        for idx, image_url in enumerate(image_urls[:n_cols]):
-                            with cols[idx]:
-                                st.image(image_url)
+            
+            if not result["is_menu"]:
+                st.write("The image is not a restaurant menu written in Korean")
+            else:
+                for dish in result["recommended_dishes"]:
+                    with st.expander(f"{dish.korean_name} / {dish.english_name}"):
+                        st.write(dish.description)
+                        st.write(dish.why)
+                        # Display multiple images in one row
+                        image_urls = result["image_urls"][dish.korean_name]
+                        if image_urls:
+                            n_cols = min(len(image_urls), 3)
+                            cols = st.columns(n_cols)
+                            for idx, image_url in enumerate(image_urls[:n_cols]):
+                                with cols[idx]:
+                                    st.image(image_url)
 
             for path in paths:
                 try:

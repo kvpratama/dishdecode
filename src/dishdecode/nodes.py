@@ -3,7 +3,7 @@ import os
 import logging
 import time
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage
-from dishdecode.state import RecommendedDishList, GraphState, KoreanDishes
+from dishdecode.state import RecommendedDishList, GraphState, KoreanDishes, CheckImage
 from PIL import Image
 from dishdecode.llm import get_llm
 
@@ -13,9 +13,10 @@ import json
 
 # from llm_model import get_gemma27b_llm, get_gemma12b_llm
 from langgraph.config import get_stream_writer
-from typing import Dict, List
+from typing import Dict, List, Literal
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langgraph.types import Command
 from pydantic import BaseModel, Field
 from langchain_tavily import TavilySearch
 
@@ -46,6 +47,53 @@ def preprocess_image(state: GraphState, config: dict):
     resized_image.save(state["image_path"])
     logger.info(f"Resized image: {state['image_path']}")
     return {"image_path": state["image_path"]}
+
+
+# TODO: Create a node to check if the image is Restaurant Menu written in Korean
+
+
+def check_menu(state: GraphState, config: dict) -> Command[Literal["extract_menu", "__end__"]]:
+    logger.info(f"Checking menu: {state['image_path']}")
+    stream_writer = get_stream_writer()
+    stream_writer({"custom_key": "Checking image..."})
+
+    parser = JsonOutputParser(pydantic_object=CheckImage)
+
+    # Initialize the Gemini model
+    llm = get_llm(model_name="gemma-3-12b-it")
+    # Load and encode local image
+    with open(state["image_path"], "rb") as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+    plain_prompt = (
+        "Classify the image as a restaurant menu written in Korean. Return True if it is a restaurant menu written in Korean, False otherwise."
+    )
+    human_message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": plain_prompt + f"\n\n{parser.get_format_instructions()}",
+            },
+            {
+                "type": "image_url",
+                "image_url": f"data:image/jpeg;base64,{encoded_image}",
+            },
+        ]
+    )
+
+    response = llm.invoke([human_message])
+    parsed = parser.parse(response.content)
+    is_menu = parsed["is_menu"]
+
+    update = {"is_menu": is_menu}
+    if is_menu:
+        logger.info("Image is a restaurant menu written in Korean")
+        goto = "extract_menu"
+    else:
+        logger.info("Image is not a restaurant menu written in Korean")
+        goto = "__end__"
+
+    return Command(update=update, goto=goto)
 
 
 def extract_menu(state: GraphState, config: dict):
