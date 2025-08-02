@@ -63,6 +63,7 @@ if "thread_id_dishdecode" not in st.session_state:
                 tmp.write(file_bytes)
                 paths.append(tmp.name)
             st.session_state["paths"] = paths
+            st.session_state["image"] = file_bytes
             st.rerun()
 
 if "paths" in st.session_state and "result" not in st.session_state:
@@ -71,7 +72,7 @@ if "paths" in st.session_state and "result" not in st.session_state:
     if st.button("Process image"):
         with st.spinner("Processing..."):
             input_data = {
-                "image_path": st.session_state["paths"][0],
+                "image": st.session_state["image"],
                 "max_size": 640,
             }
             with st.empty():

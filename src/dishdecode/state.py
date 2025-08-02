@@ -35,7 +35,7 @@ class RecommendedDishList(BaseModel):
 
 # Define the state type with annotations
 class GraphState(MessagesState):
-    image_path: str
+    image: bytes
     max_size: int
     menu_korean: List[str]
     recommended_dishes: List[RecommendedDish]
@@ -44,7 +44,7 @@ class GraphState(MessagesState):
 
 
 class GraphStateInput(MessagesState):
-    image_path: str
+    image: bytes
     max_size: int
 
 

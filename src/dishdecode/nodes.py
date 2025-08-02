@@ -10,7 +10,7 @@ from dishdecode.llm import get_llm
 # from prompts import load_prompt
 import base64
 import json
-
+import io
 # from llm_model import get_gemma27b_llm, get_gemma12b_llm
 from langgraph.config import get_stream_writer
 from typing import Dict, List, Literal
@@ -28,12 +28,13 @@ def preprocess_image(state: GraphState, config: dict):
     stream_writer = get_stream_writer()
     try:
         stream_writer({"custom_key": "Processing the menu..."})
-        if "image_path" not in state:
-            raise KeyError("'image_path' key not found in state.")
+        if "image" not in state:
+            raise KeyError("'image' key not found in state.")
         if "max_size" not in state:
             raise KeyError("'max_size' key not found in state.")
 
-        image = Image.open(state["image_path"])
+        image = state["image"]
+        image = Image.open(io.BytesIO(image))
         original_width, original_height = image.size
         if original_width == 0 or original_height == 0:
             raise ValueError("Image has zero width or height.")
@@ -48,15 +49,18 @@ def preprocess_image(state: GraphState, config: dict):
         new_width = int(original_width * scale)
         new_height = int(original_height * scale)
         resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        resized_image.save(state["image_path"])
+        # convert resized_image back to bytes
+        output_buffer = io.BytesIO()
+        resized_image.save(output_buffer, format="JPEG")  # or "PNG"
+        image_bytes = output_buffer.getvalue()
 
-        logger.info(f"Resized image: {state['image_path']}")
-        return {"image_path": state["image_path"]}
+        logger.info(f"Resized image to: {new_width}x{new_height}")
+        return {"image": image_bytes}
     except Exception as e:
         logger.error(f"Exception in preprocess_image: {e}", exc_info=True)
         if stream_writer:
             stream_writer({"custom_key": f"Error: {str(e)}"})
-        return {"image_path": None, "error": str(e)}
+        return {"image": None, "error": str(e)}
 
 
 def process_image_with_llm(
@@ -69,17 +73,15 @@ def process_image_with_llm(
     model_name: str,
     postprocess_fn=None,
 ):
-    logger.info(f"{log_message}: {state.get('image_path', '<missing>')}")
+    logger.info(f"{log_message}")
     stream_writer = get_stream_writer()
     try:
         stream_writer({"custom_key": stream_message})
-        if "image_path" not in state:
-            raise KeyError("'image_path' key not found in state.")
+        if "image" not in state:
+            raise KeyError("'image' key not found in state.")
         llm = get_llm(model_name=model_name)
 
-        with open(state["image_path"], "rb") as image_file:
-            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
-
+        encoded_image = base64.b64encode(state["image"]).decode("utf-8")
         human_message = HumanMessage(
             content=[
                 {
