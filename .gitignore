@@ -168,6 +168,10 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# --- Custom overrides for project access ---
+# Allow dart source under android/lib to be included for analysis by AI tools
+!android/lib/
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
