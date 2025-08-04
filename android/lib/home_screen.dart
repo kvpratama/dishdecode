@@ -41,23 +41,37 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final bytes = await imageFile.readAsBytes();
       final result = await _apiService.uploadImage(bytes);
-      final dishes =
-          (result['recommended_dishes'] as List)
-              .map(
-                (dishJson) => Dish.fromJson(
-                  dishJson,
-                  result['dish_images'][dishJson['korean_name']].cast<String>(),
-                ),
-              )
-              .toList();
+      if (result['is_menu'] == false) {
+        // show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'The image does not appear to be a menu written in Korean. Please try again.',
+              ),
+            ),
+          );
+        }
+      } else {
+        final dishes =
+            (result['recommended_dishes'] as List)
+                .map(
+                  (dishJson) => Dish.fromJson(
+                    dishJson,
+                    result['dish_images'][dishJson['korean_name']]
+                        .cast<String>(),
+                  ),
+                )
+                .toList();
 
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ResultsScreen(dishes: dishes),
-          ),
-        );
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResultsScreen(dishes: dishes),
+            ),
+          );
+        }
       }
     } catch (e) {
       // TODO: Handle error

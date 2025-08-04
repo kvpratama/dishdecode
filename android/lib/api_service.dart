@@ -83,48 +83,14 @@ class ApiService {
       final headers_run = <String, String>{'Content-Type': 'application/json'};
       final String base64Image = base64Encode(imageBytes);
       final input_data = {"image": base64Image, "max_size": 640};
-      final body_run_map = {
-        "assistant_id": assistantId,
-        "input": input_data
-      };
+      final body_run_map = {"assistant_id": assistantId, "input": input_data};
       final response_run = await http.post(
         Uri.parse('http://10.0.2.2:2024/threads/$threadId/runs/wait'),
         headers: headers_run,
         body: jsonEncode(body_run_map),
       );
       print(response_run.body);
-
-      // Fallback to mock data for now
-      print('Using mock data instead of server response');
-      return {
-        'is_menu': true,
-        'recommended_dishes': [
-          {
-            'korean_name': '김치찌개',
-            'english_name': 'Kimchi Jjigae',
-            'description': 'A spicy stew made with kimchi, tofu, and pork.',
-            'why': 'A classic Korean comfort food.',
-          },
-          {
-            'korean_name': '불고기',
-            'english_name': 'Bulgogi',
-            'description': 'Marinated beef grilled to perfection.',
-            'why': 'A sweet and savory dish that is popular with everyone.',
-          },
-        ],
-        'dish_images': {
-          '김치찌개': [
-            'https://m.cooksomssi.co.kr/web/product/big/202401/7afc1dd591c2f11f8db2b9dadb32e1f5.jpg',
-            'https://d3h1lg3ksw6i6b.cloudfront.net/media/image/2019/05/15/7c83ee03d7534c34a7d1845879ca5075_kimchi-1030x800.jpg',
-            'https://gi.esmplus.com/hifist10/860_600_ebay.jpg',
-          ],
-          '불고기': [
-            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQo4SITGr1rHvnQBtkjyvlz4oxwV_tmgb9bHw&s',
-            'https://recipe1.ezmember.co.kr/cache/recipe/2022/09/14/e8e5c6928ecd87df09d03bf9a5684c881.jpg',
-            'https://recipe1.ezmember.co.kr/cache/recipe/2024/09/05/23a1a45982d33638566887ec2c3ecc611.jpg',
-          ],
-        },
-      };
+      return jsonDecode(response_run.body);
     } on TimeoutException catch (e) {
       print('Timeout error: $e');
       rethrow; // or return mock data
