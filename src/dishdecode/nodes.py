@@ -237,7 +237,7 @@ def search_dish_image(state: GraphState, config: dict):
             try:
                 results = tool.invoke(dish.korean_name)
                 if results and "images" in results and results["images"]:
-                    image_urls[dish.korean_name] = results["images"]
+                    image_urls[dish.korean_name] = results["images"][:3]
                 else:
                     image_urls[dish.korean_name] = None
             except Exception as e:
