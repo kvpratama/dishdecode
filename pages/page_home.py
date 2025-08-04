@@ -3,6 +3,7 @@ import os
 import tempfile
 import logging
 import uuid
+import base64
 from dishdecode.graph import graph
 
 # Configure logging
@@ -72,7 +73,7 @@ if "paths" in st.session_state and "result" not in st.session_state:
     if st.button("Process image"):
         with st.spinner("Processing..."):
             input_data = {
-                "image": st.session_state["image"],
+                "image": base64.b64encode(st.session_state["image"]).decode("utf-8"),
                 "max_size": 640,
             }
             with st.empty():

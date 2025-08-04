@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def preprocess_image(state: GraphState, config: dict):
-    logger.info(f"Resizing image: {state.get('image_path', '<missing>')}")
+    logger.info(f"Resizing image")
     stream_writer = get_stream_writer()
     try:
         stream_writer({"custom_key": "Processing the menu..."})
@@ -34,7 +34,7 @@ def preprocess_image(state: GraphState, config: dict):
             raise KeyError("'max_size' key not found in state.")
 
         image = state["image"]
-        image = Image.open(io.BytesIO(image))
+        image = Image.open(io.BytesIO(base64.b64decode(image)))
         original_width, original_height = image.size
         if original_width == 0 or original_height == 0:
             raise ValueError("Image has zero width or height.")
@@ -186,7 +186,7 @@ def recommend_dishes(state: GraphState, config: dict):
     stream_writer({"custom_key": "Picking top dishes..."})
 
     try:
-        llm = get_llm(model_name="gemini-2.5-flash-lite-preview-06-17")
+        llm = get_llm(model_name="gemini-2.5-flash-lite")
         structured_llm = llm.with_structured_output(RecommendedDishList)
 
         # Validate that 'menu_korean' exists and is a list
